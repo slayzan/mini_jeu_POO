@@ -1,67 +1,84 @@
-class Player
-   attr_accessor :name, :life_points
+class Game
+   attr_accessor :human_player, :enemies
 
    def initialize(name)
-      @name = name
-      @life_points = 10
+      i = 0
+      @human_player = HumanPlayer.new(name)
+      @enemies = []
+      4.times {create_bot(Faker::Name.name)}
    end
 
-   def show_state
-         puts "#{@name} a #{@life_points} points de vie"
+   def create_bot(name)
+      bot = Player.new(name)
+      @enemies << bot
    end
 
-   def gets_damage(damage)
-      @life_points = @life_points.positive? ? @life_points - damage : 0
-      puts "le joueur #{@name} a été tué !" if @life_points <= 0
+   def show_ennemies
+      @enemies.each {|bot| puts bot.name}
    end
 
-   def attacks(player)
-      dgt = compute_damage
-      puts "#{@name} attaque le joueur #{player.name}"
-      puts "il lui inflige #{dgt} points de dégats"
-      player.gets_damage(dgt)
+   def kill_player
+      @enemies.each do |bot|
+         if bot.life_points.negative?
+            @enemies.delete(bot) 
+            puts "#{bot.name} est mort"
+         end
+      end
    end
 
-   def compute_damage
-      damage = rand(1..6)
-      damage += 4 if damage == 6
-      damage
-   end
-end
-
-class HumanPlayer < Player
-   attr_accessor :weapon_level
-
-   def initialize(name)
-      @name = name
-      @life_points = 100
-      @weapon_level = 1
-   end
-   
-   def show_state
-      puts "#{@name} a #{@life_points} point de vie et une arme de niveau #{@weapon_level}"
+   def is_still_going?
+      @enemies.count.positive? && human_player.life_points.positive?
    end
 
-   def compute_damage
-      super * @weapon_level
+   def show_player
+      @human_player.show_state
+      @enemies.each {|bot| puts "#{bot.name} a encore #{bot.life_points} point de vie"}
    end
 
-   def search_weapon
-      level = rand(1..6)
-      puts "tu as trouvé une arme de niveau #{level}"
-      puts level > @weapon_level ? "Youhou ! elle est meilleure que ton arme actuelle : tu la prends" : "M@*#$... elle n'est pas mieux que ton arme actuelle..."
-      @weapon_level = level > @weapon_level ? level : @weapon_level
+   def menu
+      puts "Quelle action veux-tu effectuer ?\n"
+      puts 'a - chercher une meilleure arme'
+      puts "s - chercher à se soigner\n"
+      puts 'attaquer un joueur en vue :'
+      f1 = fight_rand_ennemie
+      puts "0 - #{@enemies[f1].name} a #{@enemies[f1].life_points} point de vie"
+      f2 = fight_rand_ennemie
+      puts "1 - #{@enemies[f2].name} a #{@enemies[f2].life_points} point de vie"
+      choose = gets.chomp
+      print ''
+      menu_choice(choose,f1,f2)
    end
-   
-   def search_health_pack
-    pack = rand(1..6)
-    puts "Tu n'as rien trouvé..." if pack == 1
-    if pack > 1 && pack < 6
-      puts "Bravo, tu as trouvé un pack de +50 points de vie !"
-      @life_points + 50 > 100 ? @life_points = 100 : @life_points += 50
-    elsif pack == 6
-      puts "Waow, tu as trouvé un pack de +80 points de vie !"
-      @life_points + 80 > 100 ? @life_points = 100 : @life_points += 80
-    end
-  end
+
+   def menu_choice(choose,f1,f2)
+      case choose
+      when 'a'
+         human_player.search_weapon
+      when 's'
+         human_player.search_health_pack
+      when '0'
+         human_player.attacks(@enemies[f1])
+      when '1'
+         human_player.attacks(@enemies[f2])
+      else
+         puts 'Erreur commande inconnue'
+      end   
+   end
+
+   def fight_rand_ennemie
+      left = 0
+      @enemies.each {|bot| left += 1}
+      choose = rand(0..left - 1)
+      choose
+   end
+
+   def check_dead
+      @enemies.each {bot}
+   end
+   def enemies_attack
+      @enemies.each { |ennemy| ennemy.attacks(human_player) }
+   end
+
+   def end
+      puts human_player.life_points <= 0 ? 'T\'as perdu !' : 'Bien joue'
+   end
 end
